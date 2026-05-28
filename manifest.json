@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-05-28T12:41:50.708Z",
+  "urls": [
+    {
+      "slug": "kapiva-home",
+      "url": "https://kapiva.com",
+      "captures": [
+        {
+          "ts": "2026-05-28T12-41",
+          "ok": true,
+          "bytes": 125374
+        },
+        {
+          "ts": "2026-05-28T12-39",
+          "ok": true,
+          "bytes": 125374
+        }
+      ]
+    },
+    {
+      "slug": "example-com",
+      "url": "https://example.com",
+      "captures": [
+        {
+          "ts": "2026-05-28T12-41",
+          "ok": true,
+          "bytes": 12091
+        },
+        {
+          "ts": "2026-05-28T12-39",
+          "ok": true,
+          "bytes": 12091
+        }
+      ]
+    }
+  ]
+}

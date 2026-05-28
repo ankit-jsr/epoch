@@ -1,0 +1,48 @@
+name: capture
+
+on:
+  schedule:
+    # 06:00, 14:00, 22:00 UTC daily. Disable by commenting out while you're still wiring things up.
+    - cron: '0 6,14,22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run capture
+        run: npm run capture
+
+      - name: Commit and push
+        run: |
+          git config user.name  "screenshot-bot"
+          git config user.email "screenshot-bot@users.noreply.github.com"
+          git add screenshots/ manifest.json
+          if git diff --cached --quiet; then
+            echo "no changes to commit"
+            exit 0
+          fi
+          git commit -m "capture: $(date -u +%Y-%m-%dT%H:%M)"
+          # Rebase in case another run committed between checkout and now.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push

@@ -1,0 +1,11 @@
+node_modules/
+viewer/node_modules/
+viewer/dist/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Local-only Claude Code settings
+.claude/settings.local.json
