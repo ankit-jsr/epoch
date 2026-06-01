@@ -6,5 +6,13 @@
   {
     "slug": "example-com",
     "url": "https://example.com"
+  },
+  {
+    "slug": "kapiva-in-kapiva-dia-free-juice-1-l",
+    "url": "https://kapiva.in/kapiva-dia-free-juice-1-l/",
+    "viewports": [
+      "desktop",
+      "mobile"
+    ]
   }
 ]
