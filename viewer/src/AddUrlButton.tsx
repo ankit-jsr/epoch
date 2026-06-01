@@ -138,11 +138,16 @@ export function AddUrlButton() {
             <button type="button" className="link" onClick={() => setOpen(false)}>close</button>
           </header>
 
-          <p className="muted">
-            Opens a GitHub Issue with an <code>add-url</code> label. A workflow validates and adds
-            the URL to <code>urls.json</code>, then closes the issue. Only repo collaborators
-            can use this.
-          </p>
+          <div className="add-url-form__steps">
+            <strong>How this works</strong>
+            <ol>
+              <li>This form opens a pre-filled GitHub Issue in a new tab.</li>
+              <li>You click <strong>Submit new issue</strong> on GitHub.</li>
+              <li>A workflow validates it, adds the URL to <code>urls.json</code>, and closes the issue automatically.</li>
+              <li>The URL appears here on the next capture run (or trigger one manually).</li>
+            </ol>
+            <small className="muted">Only repo collaborators can add URLs — GitHub handles the auth.</small>
+          </div>
 
           <label className="add-url-form__field">
             <span>URL</span>
@@ -205,7 +210,7 @@ export function AddUrlButton() {
           <footer className="add-url-form__footer">
             <button type="button" className="link" onClick={() => { reset(); setOpen(false); }}>cancel</button>
             <button type="submit" className="add-url-form__submit">
-              Open issue on GitHub →
+              Continue to GitHub →
             </button>
           </footer>
         </form>
