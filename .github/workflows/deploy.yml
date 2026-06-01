@@ -2,7 +2,7 @@ name: deploy-viewer
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
     paths:
       - 'viewer/**'
       - 'manifest.json'
