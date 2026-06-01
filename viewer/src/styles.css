@@ -203,15 +203,27 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .range-capsule:hover { border-color: var(--accent); }
 .range-capsule.is-active { background: var(--accent); color: white; border-color: var(--accent); }
 
-.date-pickers { display: inline-flex; align-items: center; gap: 8px; }
-.date-picker { display: inline-flex; flex-direction: column; gap: 2px; }
-.date-picker span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
-.date-picker input[type="date"] {
+.dt-pickers { display: inline-flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.dt-pickers__arrow { font-size: 16px; color: var(--muted); align-self: center; margin-top: 18px; }
+.timeline-controls__row--top { align-items: flex-start; }
+
+.dt-picker {
+  display: inline-grid;
+  grid-template-columns: auto auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+}
+.dt-picker__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.dt-picker__date,
+.dt-picker__time {
   padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
-  background: var(--bg); color: var(--fg); font: inherit; font-size: 13px;
+  background: var(--card); color: var(--fg); font: inherit; font-size: 13px;
   color-scheme: light dark;
 }
-.date-pickers__arrow { font-size: 16px; color: var(--muted); margin-top: 14px; }
+.dt-picker__count { font-size: 11px; white-space: nowrap; }
+.dt-picker__count.error { color: var(--error); }
 
 @media (max-width: 640px) {
   .timeline-controls__label { min-width: 0; }

@@ -123,12 +123,12 @@ function Detail() {
     setParams(np);
   }
 
-  function pickDate(slot: 'a' | 'b', cap: Capture | null) {
+  function pickTs(slot: 'a' | 'b', ts: string | null) {
     const np = new URLSearchParams(params);
-    if (!cap) {
+    if (!ts) {
       np.delete(slot);
     } else {
-      np.set(slot, cap.ts);
+      np.set(slot, ts);
     }
     setParams(np);
   }
@@ -170,7 +170,7 @@ function Detail() {
           viewport={viewport}
           aTs={a}
           bTs={b}
-          onPickDate={pickDate}
+          onPickTs={pickTs}
         />
 
         <div className="timeline__hint muted">
