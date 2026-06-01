@@ -47,51 +47,6 @@
       ]
     },
     {
-      "slug": "example-com",
-      "url": "https://example.com",
-      "captures": [
-        {
-          "ts": "2026-06-01T07-57",
-          "viewports": {
-            "desktop": {
-              "ok": true,
-              "bytes": 22314
-            },
-            "mobile": {
-              "ok": true,
-              "bytes": 66076
-            }
-          }
-        },
-        {
-          "ts": "2026-06-01T07-50",
-          "viewports": {
-            "desktop": {
-              "ok": true,
-              "bytes": 22314
-            },
-            "mobile": {
-              "ok": true,
-              "bytes": 66076
-            }
-          }
-        },
-        {
-          "ts": "2026-06-01T07-31",
-          "viewports": {
-            "desktop": {
-              "ok": true,
-              "bytes": 17756
-            },
-            "mobile": {
-              "ok": true,
-              "bytes": 63759
-            }
-          }
-        }
-      ]
-    },
-    {
       "slug": "kapiva-in-kapiva-dia-free-juice-1-l",
       "url": "https://kapiva.in/kapiva-dia-free-juice-1-l/",
       "captures": [
