@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Routes, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { AddUrlButton } from './AddUrlButton';
 import { Compare } from './Compare';
 import { SingleView } from './SingleView';
+import { TimelineControls } from './TimelineControls';
 import {
   availableViewports,
   formatTs,
   hasViewport,
   manifestUrl,
   VIEWPORTS,
+  withinRange,
+  type Capture,
   type Manifest,
   type ManifestEntry,
+  type TimeRange,
   type Viewport,
 } from './types';
 
@@ -73,13 +77,20 @@ function Detail() {
   const { slug = '' } = useParams();
   const { data, error } = useManifest();
   const [params, setParams] = useSearchParams();
+  const [range, setRange] = useState<TimeRange>('all');
   const a = params.get('a');
   const b = params.get('b');
   const v = (params.get('v') as Viewport | null) ?? 'desktop';
 
+  // Hooks must run unconditionally — compute inputs even when data isn't ready yet.
+  const entry: ManifestEntry | undefined = data?.urls.find((u) => u.slug === slug);
+  const filteredCaptures = useMemo<Capture[]>(() => {
+    if (!entry) return [];
+    return entry.captures.filter((c) => withinRange(c.ts, range));
+  }, [entry, range]);
+
   if (error) return <Status>Could not load manifest: {error}</Status>;
   if (!data) return <Status>Loading…</Status>;
-  const entry: ManifestEntry | undefined = data.urls.find((u) => u.slug === slug);
   if (!entry) return <Status>Unknown URL slug "{slug}".</Status>;
 
   const vps = availableViewports(entry);
@@ -112,6 +123,16 @@ function Detail() {
     setParams(np);
   }
 
+  function pickDate(slot: 'a' | 'b', cap: Capture | null) {
+    const np = new URLSearchParams(params);
+    if (!cap) {
+      np.delete(slot);
+    } else {
+      np.set(slot, cap.ts);
+    }
+    setParams(np);
+  }
+
   return (
     <main className="container">
       <header className="page-header">
@@ -141,8 +162,19 @@ function Detail() {
 
       <section className="timeline">
         <h2 className="section-title">Captures</h2>
+
+        <TimelineControls
+          range={range}
+          onRange={setRange}
+          captures={entry.captures}
+          viewport={viewport}
+          aTs={a}
+          bTs={b}
+          onPickDate={pickDate}
+        />
+
         <div className="timeline__hint muted">
-          {!a && 'Click a capture to view it. Click a second one to compare.'}
+          {!a && 'Click a capture below to view it. Click a second one to compare. Or use the date pickers above.'}
           {a && !b && (
             <>Viewing {formatTs(a)}. Click another capture to compare. <button className="link" onClick={clear}>clear</button></>
           )}
@@ -151,7 +183,10 @@ function Detail() {
           )}
         </div>
         <ol className="capture-list">
-          {entry.captures.map((c) => {
+          {filteredCaptures.length === 0 && (
+            <li className="muted">No captures in this range. Try "All" or a wider window.</li>
+          )}
+          {filteredCaptures.map((c) => {
             const selected = c.ts === a || c.ts === b;
             const ok = hasViewport(c, viewport);
             const result = c.viewports[viewport];

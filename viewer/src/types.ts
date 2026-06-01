@@ -58,3 +58,51 @@ export function availableViewports(entry: ManifestEntry): Viewport[] {
   }
   return VIEWPORTS.filter((v) => set.has(v));
 }
+
+/** Convert capture ts ("2026-06-01T07-50") to a Date object (UTC). */
+export function parseTs(ts: string): Date {
+  // Re-introduce the colon stripped at capture time so the string is a valid ISO.
+  const [d, t] = ts.split('T');
+  if (!t) return new Date(d);
+  const fixed = `${d}T${t.replace('-', ':')}:00Z`;
+  return new Date(fixed);
+}
+
+/** "YYYY-MM-DD" — local-day form, suitable for <input type="date"> value. */
+export function isoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Just the YYYY-MM-DD prefix of a capture's UTC ts. */
+export function tsDateUtc(ts: string): string {
+  return ts.slice(0, 10);
+}
+
+export type TimeRange = 'all' | 'today' | '7d' | '30d';
+
+export function withinRange(ts: string, range: TimeRange): boolean {
+  if (range === 'all') return true;
+  const captureDate = parseTs(ts);
+  const now = new Date();
+  if (range === 'today') {
+    return tsDateUtc(ts) === tsDateUtc(now.toISOString().replace(':', '-'));
+  }
+  const days = range === '7d' ? 7 : 30;
+  const cutoff = now.getTime() - days * 24 * 60 * 60 * 1000;
+  return captureDate.getTime() >= cutoff;
+}
+
+/** Latest capture (by ts desc) on a given UTC date that has the given viewport. */
+export function findCaptureOnDate(
+  captures: Capture[],
+  dateYmd: string,
+  viewport: Viewport,
+): Capture | null {
+  for (const c of captures) {
+    if (tsDateUtc(c.ts) === dateYmd && hasViewport(c, viewport)) return c;
+  }
+  return null;
+}
