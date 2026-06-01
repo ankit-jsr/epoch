@@ -11,6 +11,44 @@ import {
 
 const NAV_TIMEOUT_MS = 45_000;
 const SETTLE_MS = 1_000;
+const SCROLL_STEP_PX = 600;
+const SCROLL_PAUSE_MS = 400;
+const POST_SCROLL_SETTLE_MS = 1_500;
+
+/**
+ * Many modern sites (Shopify, Webflow, custom React) lazy-render sections via
+ * IntersectionObserver. A naive `fullPage: true` screenshot captures the full
+ * document height, but only the viewport-visible content has actually rendered —
+ * below-the-fold sections show as skeletons/placeholders.
+ *
+ * Fix: scroll top-to-bottom in increments so lazy sections trigger, then return
+ * to the top before screenshotting.
+ *
+ * The script is passed as a string (not a function) to bypass tsx/esbuild's
+ * `__name` helper injection, which breaks inside page.evaluate().
+ */
+async function scrollFullPage(page: import('playwright').Page): Promise<void> {
+  const script = `(async function(step, pause) {
+    function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+    var prevHeight = -1;
+    var stableLoops = 0;
+    var y = 0;
+    while (stableLoops < 2) {
+      var docHeight = document.documentElement.scrollHeight;
+      if (y >= docHeight) {
+        if (docHeight === prevHeight) { stableLoops += 1; } else { stableLoops = 0; }
+        prevHeight = docHeight;
+        if (stableLoops >= 2) break;
+      }
+      window.scrollTo(0, y);
+      await sleep(pause);
+      y += step;
+      if (y > docHeight * 2) break;
+    }
+    window.scrollTo(0, 0);
+  })(${SCROLL_STEP_PX}, ${SCROLL_PAUSE_MS})`;
+  await page.evaluate(script);
+}
 
 function timestamp(): string {
   // ISO minute precision, ':' replaced for cross-platform filenames.
@@ -45,6 +83,9 @@ async function main(): Promise<void> {
         // ignore — some pages have no fonts API
       }
       await page.waitForTimeout(SETTLE_MS);
+      // Trigger lazy-loaded sections by scrolling top-to-bottom before screenshotting.
+      await scrollFullPage(page);
+      await page.waitForTimeout(POST_SCROLL_SETTLE_MS);
       const path = `screenshots/${slug}/${ts}.png`;
       mkdirSync(dirname(path), { recursive: true });
       const buf = await page.screenshot({ fullPage: true, type: 'png' });
