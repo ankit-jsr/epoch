@@ -27,7 +27,7 @@ function List() {
   return (
     <main className="container">
       <header className="page-header">
-        <h1>Web History</h1>
+        <h1>Epoch</h1>
         <p className="muted">Last updated {formatTs(data.generated_at.slice(0, 16).replace(':', '-'))} UTC</p>
       </header>
       <ul className="url-list">

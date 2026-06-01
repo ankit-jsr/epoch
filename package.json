@@ -1,5 +1,5 @@
 {
-  "name": "web-history",
+  "name": "epoch",
   "version": "0.1.0",
   "private": true,
   "description": "Daily screenshot tracker — captures a list of URLs and stores them in this repo for later comparison.",

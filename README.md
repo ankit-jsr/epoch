@@ -1,4 +1,7 @@
-# Web History — Website Screenshot Tracker
+# Epoch — Website Screenshot Tracker
+
+> A point-in-time archive for any URL. Captures three snapshots a day, lets you compare any two moments.
+
 
 Captures a list of URLs three times per day via GitHub Actions, commits the
 PNGs back to this repo, and serves a viewer (Vite + React) on GitHub Pages
@@ -71,7 +74,7 @@ copy anything around during development.
 
 1. **Create the repo** (use the GitHub CLI or the web UI):
    ```bash
-   gh repo create web-history --public --source=. --remote=origin --push
+   gh repo create epoch --public --source=. --remote=origin --push
    ```
 
 2. **Enable GitHub Pages**: repo Settings → Pages → Source: **GitHub Actions**.
