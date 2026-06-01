@@ -20,10 +20,31 @@ concurrency:
 
 jobs:
   add-url:
-    if: contains(github.event.issue.labels.*.name, 'add-url')
+    # We accept either the label OR the issue title prefix "Add URL:" — viewer-
+    # opened issues sometimes don't have the label applied (GitHub silently
+    # ignores `?labels=` URL params if the label doesn't exist yet, and people
+    # can also use the Issue Form template at .github/ISSUE_TEMPLATE/add-url.yml
+    # which guarantees the label).
+    if: |
+      contains(github.event.issue.labels.*.name, 'add-url') ||
+      startsWith(github.event.issue.title, 'Add URL:')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Ensure add-url label exists and is on the issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Idempotent: create the label if it doesn't exist (so future
+          # ?labels=add-url URL params actually stick).
+          gh label create add-url \
+            --repo "${{ github.repository }}" \
+            --color "0E8A16" \
+            --description "Automation: append this URL to urls.json" 2>/dev/null || true
+          # Idempotent: ensure this issue has the label so the audit trail is clean.
+          gh issue edit "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --add-label add-url 2>/dev/null || true
       - name: Gate on author association
         id: gate
         env:

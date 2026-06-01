@@ -1,0 +1,68 @@
+name: Add URL
+description: Add a URL to Epoch's tracked list. Workflow validates and appends to urls.json.
+title: "Add URL: <slug>"
+labels: ["add-url"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use the viewer's **+ Add URL** button for the smoothest experience —
+        it pre-fills this form for you. You can also fill it in by hand.
+  - type: input
+    id: slug
+    attributes:
+      label: Slug
+      description: Lowercase kebab-case identifier (e.g. `kapiva-shilajit`). Used as the storage path and viewer URL — keep stable.
+      placeholder: kapiva-shilajit
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      description: Full URL including https://
+      placeholder: https://kapiva.in/products/himalayan-shilajit
+    validations:
+      required: true
+  - type: dropdown
+    id: viewports
+    attributes:
+      label: Viewports
+      description: Which viewports should the cron capture for this URL?
+      options:
+        - desktop + mobile (recommended)
+        - desktop only
+        - mobile only
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: wait_for
+    attributes:
+      label: Wait strategy
+      description: How should Playwright decide the page is "loaded"?
+      options:
+        - networkidle (default; most sites)
+        - domcontentloaded (SPAs that never go idle)
+        - load (fastest, may miss async content)
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: payload
+    attributes:
+      label: JSON payload (the workflow reads this)
+      description: |
+        Don't edit this unless you know what you're doing. The viewer form
+        builds this automatically. If filling in by hand, mirror the slug + URL above.
+      value: |
+        ```json
+        {
+          "slug": "kapiva-shilajit",
+          "url": "https://kapiva.in/products/himalayan-shilajit",
+          "viewports": ["desktop", "mobile"]
+        }
+        ```
+      render: markdown
+    validations:
+      required: true
