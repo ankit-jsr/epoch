@@ -1,10 +1,23 @@
 {
-  "generated_at": "2026-06-01T07:32:55.539Z",
+  "generated_at": "2026-06-01T07:51:21.565Z",
   "urls": [
     {
       "slug": "kapiva-home",
       "url": "https://kapiva.in",
       "captures": [
+        {
+          "ts": "2026-06-01T07-50",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 905153
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 1921158
+            }
+          }
+        },
         {
           "ts": "2026-06-01T07-31",
           "viewports": {
@@ -25,6 +38,19 @@
       "url": "https://example.com",
       "captures": [
         {
+          "ts": "2026-06-01T07-50",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 22314
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 66076
+            }
+          }
+        },
+        {
           "ts": "2026-06-01T07-31",
           "viewports": {
             "desktop": {
@@ -34,6 +60,25 @@
             "mobile": {
               "ok": true,
               "bytes": 63759
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "kapiva-in-kapiva-dia-free-juice-1-l",
+      "url": "https://kapiva.in/kapiva-dia-free-juice-1-l/",
+      "captures": [
+        {
+          "ts": "2026-06-01T07-50",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 1201932
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 3318778
             }
           }
         }
