@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # needed to `gh workflow run deploy.yml` at the end
 
 concurrency:
   group: capture
@@ -34,15 +35,28 @@ jobs:
         run: npm run capture
 
       - name: Commit and push
+        id: commit
         run: |
           git config user.name  "screenshot-bot"
           git config user.email "screenshot-bot@users.noreply.github.com"
           git add screenshots/ manifest.json
           if git diff --cached --quiet; then
             echo "no changes to commit"
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "capture: $(date -u +%Y-%m-%dT%H:%M)"
           # Rebase in case another run committed between checkout and now.
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger deploy
+        # Commits pushed by GITHUB_TOKEN don't auto-trigger other workflows
+        # (GitHub's anti-loop safety). workflow_dispatch via gh CLI is the
+        # documented exception that DOES re-trigger. Otherwise the viewer
+        # serves stale manifest until the next human push.
+        if: steps.commit.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}"
