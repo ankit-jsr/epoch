@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import pixelmatch from 'pixelmatch';
-import { formatTs, imageUrl } from './types';
+import { formatTs, imageUrl, type Viewport } from './types';
 
-type Props = { slug: string; tsA: string; tsB: string };
+type Props = { slug: string; viewport: Viewport; tsA: string; tsB: string };
 
 type DiffState =
   | { kind: 'idle' }
@@ -25,10 +25,10 @@ async function loadImageData(src: string): Promise<ImageData> {
   return ctx.getImageData(0, 0, c.width, c.height);
 }
 
-export function Compare({ slug, tsA, tsB }: Props) {
+export function Compare({ slug, viewport, tsA, tsB }: Props) {
   const base = import.meta.env.BASE_URL ?? '/';
-  const aUrl = imageUrl(base, slug, tsA);
-  const bUrl = imageUrl(base, slug, tsB);
+  const aUrl = imageUrl(base, slug, viewport, tsA);
+  const bUrl = imageUrl(base, slug, viewport, tsB);
 
   const [showDiff, setShowDiff] = useState(false);
   const [diff, setDiff] = useState<DiffState>({ kind: 'idle' });
@@ -103,7 +103,7 @@ export function Compare({ slug, tsA, tsB }: Props) {
   return (
     <section className="compare">
       <header className="compare__bar">
-        <h2 className="section-title">Compare</h2>
+        <h2 className="section-title">Compare · {viewport}</h2>
         <div className="compare__toggle">
           <label>
             <input type="checkbox" checked={showDiff} onChange={toggleDiff} />
@@ -124,7 +124,7 @@ export function Compare({ slug, tsA, tsB }: Props) {
           {diff.kind === 'error' && <span className="muted error">{diff.message}</span>}
         </div>
       </header>
-      <div className="compare__grid">
+      <div className={`compare__grid compare__grid--${viewport}`}>
         <div className="compare__pane" ref={aRef}>
           <div className="compare__label">{formatTs(tsA)}</div>
           <div className="compare__img-wrap">

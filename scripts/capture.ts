@@ -1,12 +1,14 @@
-import { chromium } from 'playwright';
+import { chromium, devices } from 'playwright';
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import {
   readManifest,
   writeManifest,
   mergeCaptures,
+  VIEWPORTS,
   type UrlEntry,
   type CaptureResult,
+  type Viewport,
 } from './lib/manifest.ts';
 
 const NAV_TIMEOUT_MS = 45_000;
@@ -15,17 +17,22 @@ const SCROLL_STEP_PX = 600;
 const SCROLL_PAUSE_MS = 400;
 const POST_SCROLL_SETTLE_MS = 1_500;
 
+// Per-viewport browser context settings.
+// `iPhone 13` preset gives a realistic mobile UA, touch, devicePixelRatio.
+const VIEWPORT_PRESETS: Record<Viewport, Parameters<import('playwright').Browser['newContext']>[0]> = {
+  desktop: { viewport: { width: 1440, height: 900 } },
+  mobile: devices['iPhone 13'],
+};
+
+function timestamp(): string {
+  // ISO minute precision, ':' replaced for cross-platform filenames.
+  return new Date().toISOString().slice(0, 16).replace(':', '-');
+}
+
 /**
- * Many modern sites (Shopify, Webflow, custom React) lazy-render sections via
- * IntersectionObserver. A naive `fullPage: true` screenshot captures the full
- * document height, but only the viewport-visible content has actually rendered —
- * below-the-fold sections show as skeletons/placeholders.
- *
- * Fix: scroll top-to-bottom in increments so lazy sections trigger, then return
- * to the top before screenshotting.
- *
- * The script is passed as a string (not a function) to bypass tsx/esbuild's
- * `__name` helper injection, which breaks inside page.evaluate().
+ * Trigger lazy-loaded sections by scrolling top-to-bottom in increments.
+ * See commit e38ab7c for rationale. Script is passed as a string to bypass
+ * tsx/esbuild's `__name` helper injection.
  */
 async function scrollFullPage(page: import('playwright').Page): Promise<void> {
   const script = `(async function(step, pause) {
@@ -50,10 +57,46 @@ async function scrollFullPage(page: import('playwright').Page): Promise<void> {
   await page.evaluate(script);
 }
 
-function timestamp(): string {
-  // ISO minute precision, ':' replaced for cross-platform filenames.
-  // e.g. "2026-05-28T22-00"
-  return new Date().toISOString().slice(0, 16).replace(':', '-');
+async function captureAtViewport(
+  browser: import('playwright').Browser,
+  entry: UrlEntry,
+  viewport: Viewport,
+  ts: string,
+  dryRun: boolean,
+): Promise<CaptureResult> {
+  const { slug, url, waitFor = 'networkidle' } = entry;
+  // Per-URL viewport override is only meaningful for desktop; mobile uses the preset.
+  const baseSettings = VIEWPORT_PRESETS[viewport];
+  const settings =
+    viewport === 'desktop' && entry.viewport
+      ? { ...baseSettings, viewport: entry.viewport }
+      : baseSettings;
+  const ctx = await browser.newContext(settings);
+  const page = await ctx.newPage();
+  const start = Date.now();
+  try {
+    await page.goto(url, { waitUntil: waitFor, timeout: NAV_TIMEOUT_MS });
+    try {
+      await page.evaluate(() => (document as Document).fonts?.ready);
+    } catch {
+      // ignore — some pages have no fonts API
+    }
+    await page.waitForTimeout(SETTLE_MS);
+    await scrollFullPage(page);
+    await page.waitForTimeout(POST_SCROLL_SETTLE_MS);
+    const path = `screenshots/${slug}/${viewport}/${ts}.png`;
+    mkdirSync(dirname(path), { recursive: true });
+    const buf = await page.screenshot({ fullPage: true, type: 'png' });
+    if (!dryRun) writeFileSync(path, buf);
+    console.log(`  ok    ${slug}  ${viewport}  ${buf.length} bytes  ${Date.now() - start}ms`);
+    return { slug, ts, viewport, ok: true, bytes: buf.length };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    console.log(`  FAIL  ${slug}  ${viewport}  ${error}`);
+    return { slug, ts, viewport, ok: false, error };
+  } finally {
+    await ctx.close();
+  }
 }
 
 async function main(): Promise<void> {
@@ -71,33 +114,9 @@ async function main(): Promise<void> {
   const results: CaptureResult[] = [];
 
   for (const entry of urls) {
-    const { slug, url, viewport = { width: 1440, height: 900 }, waitFor = 'networkidle' } = entry;
-    const ctx = await browser.newContext({ viewport });
-    const page = await ctx.newPage();
-    const start = Date.now();
-    try {
-      await page.goto(url, { waitUntil: waitFor, timeout: NAV_TIMEOUT_MS });
-      try {
-        await page.evaluate(() => (document as Document).fonts?.ready);
-      } catch {
-        // ignore — some pages have no fonts API
-      }
-      await page.waitForTimeout(SETTLE_MS);
-      // Trigger lazy-loaded sections by scrolling top-to-bottom before screenshotting.
-      await scrollFullPage(page);
-      await page.waitForTimeout(POST_SCROLL_SETTLE_MS);
-      const path = `screenshots/${slug}/${ts}.png`;
-      mkdirSync(dirname(path), { recursive: true });
-      const buf = await page.screenshot({ fullPage: true, type: 'png' });
-      if (!dryRun) writeFileSync(path, buf);
-      results.push({ slug, ts, ok: true, bytes: buf.length });
-      console.log(`  ok    ${slug}  ${buf.length} bytes  ${Date.now() - start}ms`);
-    } catch (e) {
-      const error = e instanceof Error ? e.message : String(e);
-      results.push({ slug, ts, ok: false, error });
-      console.log(`  FAIL  ${slug}  ${error}`);
-    } finally {
-      await ctx.close();
+    const viewports = entry.viewports ?? VIEWPORTS;
+    for (const viewport of viewports) {
+      results.push(await captureAtViewport(browser, entry, viewport, ts, dryRun));
     }
   }
 

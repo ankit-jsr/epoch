@@ -1,14 +1,31 @@
 {
-  "generated_at": "2026-06-01T05:59:31.412Z",
+  "generated_at": "2026-06-01T06:06:19.091Z",
   "urls": [
     {
       "slug": "kapiva-home",
       "url": "https://kapiva.in",
       "captures": [
         {
+          "ts": "2026-06-01T06-05",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 2319268
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 5429031
+            }
+          }
+        },
+        {
           "ts": "2026-06-01T05-59",
-          "ok": true,
-          "bytes": 2319268
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 2319268
+            }
+          }
         }
       ]
     },
@@ -17,29 +34,62 @@
       "url": "https://example.com",
       "captures": [
         {
+          "ts": "2026-06-01T06-05",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 12091
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 48080
+            }
+          }
+        },
+        {
           "ts": "2026-06-01T05-59",
-          "ok": true,
-          "bytes": 12091
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 12091
+            }
+          }
         },
         {
           "ts": "2026-06-01T05-35",
-          "ok": true,
-          "bytes": 19571
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 19571
+            }
+          }
         },
         {
           "ts": "2026-06-01T05-20",
-          "ok": true,
-          "bytes": 19571
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 19571
+            }
+          }
         },
         {
           "ts": "2026-05-28T12-41",
-          "ok": true,
-          "bytes": 12091
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 12091
+            }
+          }
         },
         {
           "ts": "2026-05-28T12-39",
-          "ok": true,
-          "bytes": 12091
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 12091
+            }
+          }
         }
       ]
     }
