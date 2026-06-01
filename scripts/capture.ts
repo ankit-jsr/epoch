@@ -16,6 +16,10 @@ const SETTLE_MS = 1_000;
 const SCROLL_STEP_PX = 600;
 const SCROLL_PAUSE_MS = 400;
 const POST_SCROLL_SETTLE_MS = 1_500;
+// JPEG quality. 85 is the sweet spot for screenshot tracking: visually
+// indistinguishable from PNG, ~5-10x smaller. Diff is still meaningful because
+// pixelmatch's threshold absorbs JPEG compression noise.
+const JPEG_QUALITY = 85;
 
 // Per-viewport browser context settings.
 // `iPhone 13` preset gives a realistic mobile UA, touch, devicePixelRatio.
@@ -84,9 +88,9 @@ async function captureAtViewport(
     await page.waitForTimeout(SETTLE_MS);
     await scrollFullPage(page);
     await page.waitForTimeout(POST_SCROLL_SETTLE_MS);
-    const path = `screenshots/${slug}/${viewport}/${ts}.png`;
+    const path = `screenshots/${slug}/${viewport}/${ts}.jpg`;
     mkdirSync(dirname(path), { recursive: true });
-    const buf = await page.screenshot({ fullPage: true, type: 'png' });
+    const buf = await page.screenshot({ fullPage: true, type: 'jpeg', quality: JPEG_QUALITY });
     if (!dryRun) writeFileSync(path, buf);
     console.log(`  ok    ${slug}  ${viewport}  ${buf.length} bytes  ${Date.now() - start}ms`);
     return { slug, ts, viewport, ok: true, bytes: buf.length };

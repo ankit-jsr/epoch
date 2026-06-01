@@ -23,7 +23,7 @@ export type Manifest = {
 
 export function imageUrl(base: string, slug: string, viewport: Viewport, ts: string): string {
   const b = base.endsWith('/') ? base : `${base}/`;
-  return `${b}screenshots/${slug}/${viewport}/${ts}.png`;
+  return `${b}screenshots/${slug}/${viewport}/${ts}.jpg`;
 }
 
 export function manifestUrl(base: string): string {

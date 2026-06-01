@@ -113,15 +113,22 @@ copy anything around during development.
 
 ## Storage scale
 
-At 10 URLs × 3 captures/day × ~300 KB PNG:
+Screenshots are saved as **JPEG quality 85** — visually indistinguishable
+from PNG for tracking purposes, ~3× smaller.
 
-- ~270 MB/month, ~3.3 GB/year
+At 10 URLs × 3 captures/day × 2 viewports (desktop + mobile) × ~750 KB JPEG:
+
+- ~45 MB/day, ~1.35 GB/month, ~16 GB/year
 - GitHub recommends repos stay under 1 GB and hard-caps at 5 GB
-- → comfortable for ~3-4 months, viable for ~12-14 months
+- → comfortable for ~3 weeks, viable for ~3-4 months before migration
 
 When you cross 1 GB, migrate `screenshots/` to Cloudflare R2 (10 GB free,
 zero egress). The plan file at `~/.claude/plans/i-want-to-create-woolly-deer.md`
-documents the migration steps.
+documents the migration steps. Schema doesn't change; only the bytes move.
+
+If you need to delay migration: drop JPEG quality to 75 (`JPEG_QUALITY` in
+`scripts/capture.ts`) for ~40% smaller files, or capture mobile at
+devicePixelRatio=2 instead of 3.
 
 ## Troubleshooting
 
