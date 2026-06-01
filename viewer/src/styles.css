@@ -122,3 +122,52 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .viewport-btn:hover:not(:disabled) { background: var(--bg); }
 .viewport-btn.is-active { background: var(--accent); color: white; }
 .viewport-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-header--row {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+
+.add-url-btn {
+  background: var(--accent); color: white; border: none;
+  padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.add-url-btn:hover { filter: brightness(1.1); }
+
+.add-url-dialog {
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 0; background: var(--card); color: var(--fg);
+  max-width: 520px; width: 92vw;
+}
+.add-url-dialog::backdrop { background: rgba(0,0,0,0.5); }
+.add-url-form { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.add-url-form__header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.add-url-form__header h2 { margin: 0; font-size: 18px; }
+.add-url-form__field { display: flex; flex-direction: column; gap: 4px; border: none; padding: 0; margin: 0; }
+.add-url-form__field > span,
+.add-url-form__field > legend { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.add-url-form__field input[type="text"],
+.add-url-form__field input[type="url"],
+.add-url-form__field select {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--fg); font: inherit;
+}
+.add-url-form__field small { font-size: 11px; }
+.add-url-form__checks { display: flex; gap: 16px; padding-top: 4px; }
+.add-url-form__checks label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.add-url-form__error {
+  background: rgba(185, 28, 28, 0.1); color: var(--error);
+  padding: 8px 10px; border-radius: 6px; font-size: 13px;
+}
+.add-url-form__footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+  padding-top: 4px;
+}
+.add-url-form__submit {
+  background: var(--accent); color: white; border: none;
+  padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.add-url-form__submit:hover { filter: brightness(1.1); }

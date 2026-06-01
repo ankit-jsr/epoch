@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Route, Routes, useParams, useSearchParams, Navigate } from 'react-router-dom';
+import { AddUrlButton } from './AddUrlButton';
 import { Compare } from './Compare';
 import { SingleView } from './SingleView';
 import {
@@ -36,9 +37,12 @@ function List() {
   if (data.urls.length === 0) return <Status>No URLs tracked yet. Edit <code>urls.json</code>.</Status>;
   return (
     <main className="container">
-      <header className="page-header">
-        <h1>Epoch</h1>
-        <p className="muted">Last updated {formatTs(data.generated_at.slice(0, 16).replace(':', '-'))} UTC</p>
+      <header className="page-header page-header--row">
+        <div>
+          <h1>Epoch</h1>
+          <p className="muted">Last updated {formatTs(data.generated_at.slice(0, 16).replace(':', '-'))} UTC</p>
+        </div>
+        <AddUrlButton />
       </header>
       <ul className="url-list">
         {data.urls.map((u) => {

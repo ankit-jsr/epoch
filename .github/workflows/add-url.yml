@@ -1,0 +1,175 @@
+name: add-url
+
+# Trigger when an issue is opened or labeled with `add-url`.
+# The viewer's "Add URL" form opens an Issue with this label + a templated
+# body that this workflow parses to mutate urls.json.
+#
+# Only repo OWNER / MEMBER / COLLABORATOR can trigger a real edit — random
+# strangers filing an issue with the label will be ignored (with a comment).
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: add-url-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  add-url:
+    if: contains(github.event.issue.labels.*.name, 'add-url')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Gate on author association
+        id: gate
+        env:
+          ASSOC: ${{ github.event.issue.author_association }}
+        run: |
+          case "$ASSOC" in
+            OWNER|MEMBER|COLLABORATOR) echo "allowed=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "allowed=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Reject if not a collaborator
+        if: steps.gate.outputs.allowed != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: `Sorry — only repo collaborators can use the \`add-url\` automation.\n\nAuthor association was \`${context.payload.issue.author_association}\`.`,
+            });
+            await github.rest.issues.removeLabel({
+              ...context.repo,
+              issue_number: context.issue.number,
+              name: 'add-url',
+            }).catch(() => {});
+            await github.rest.issues.update({
+              ...context.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+            });
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.allowed == 'true'
+
+      - name: Parse issue body and update urls.json
+        if: steps.gate.outputs.allowed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = context.payload.issue.body || '';
+
+            // Body format the viewer form produces (fenced JSON block):
+            //   ```json
+            //   { "slug": "kapiva-shilajit", "url": "https://...", "viewports": ["desktop","mobile"] }
+            //   ```
+            const match = body.match(/```json\s*([\s\S]*?)```/);
+            if (!match) {
+              core.setFailed('No ```json``` block in issue body.');
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: 'Could not find a `​```json​` block in the issue body. Expected the viewer\'s "Add URL" form to include one.',
+              });
+              return;
+            }
+            let parsed;
+            try {
+              parsed = JSON.parse(match[1]);
+            } catch (e) {
+              core.setFailed('Invalid JSON in issue body.');
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: 'The JSON block in the issue body could not be parsed: ' + String(e.message || e),
+              });
+              return;
+            }
+
+            // Validate minimal shape.
+            const errors = [];
+            if (!parsed || typeof parsed !== 'object') errors.push('payload must be an object');
+            if (typeof parsed.slug !== 'string' || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(parsed.slug)) {
+              errors.push('`slug` must be a lowercase kebab-case identifier (a-z0-9-, up to 64 chars)');
+            }
+            try { new URL(parsed.url); } catch { errors.push('`url` must be a valid URL'); }
+            if (parsed.viewports && (!Array.isArray(parsed.viewports) ||
+                !parsed.viewports.every(v => v === 'desktop' || v === 'mobile'))) {
+              errors.push('`viewports`, if provided, must be an array containing only "desktop" or "mobile"');
+            }
+            if (errors.length) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: 'Cannot add URL — validation failed:\n\n' + errors.map(e => `- ${e}`).join('\n'),
+              });
+              core.setFailed('validation failed');
+              return;
+            }
+
+            // Load and update urls.json.
+            const path = 'urls.json';
+            const urls = JSON.parse(fs.readFileSync(path, 'utf-8'));
+            const dupe = urls.find(u => u.slug === parsed.slug);
+            if (dupe) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: `Slug \`${parsed.slug}\` is already tracked (\`${dupe.url}\`). Pick a different slug, or edit \`urls.json\` directly to change the URL.`,
+              });
+              await github.rest.issues.update({
+                ...context.repo,
+                issue_number: context.issue.number,
+                state: 'closed',
+              });
+              return;
+            }
+
+            // Build the new entry, dropping undefined/null fields.
+            const entry = { slug: parsed.slug, url: parsed.url };
+            if (parsed.viewports) entry.viewports = parsed.viewports;
+            if (parsed.waitFor) entry.waitFor = parsed.waitFor;
+            if (parsed.viewport && typeof parsed.viewport === 'object') entry.viewport = parsed.viewport;
+
+            urls.push(entry);
+            fs.writeFileSync(path, JSON.stringify(urls, null, 2) + '\n');
+
+            core.exportVariable('SLUG', entry.slug);
+            core.exportVariable('URL', entry.url);
+
+      - name: Commit and push
+        if: steps.gate.outputs.allowed == 'true'
+        run: |
+          git config user.name  "epoch-bot"
+          git config user.email "epoch-bot@users.noreply.github.com"
+          git add urls.json
+          if git diff --cached --quiet; then
+            echo "no changes to commit (validation likely failed earlier)"
+            exit 0
+          fi
+          git commit -m "Add URL: ${SLUG:-unknown} (#${{ github.event.issue.number }})"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push
+
+      - name: Confirm and close
+        if: steps.gate.outputs.allowed == 'true' && env.SLUG != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: `Added \`${process.env.SLUG}\` → ${process.env.URL}.\n\nThe next scheduled capture run will include it, or you can trigger one manually from the [Actions tab](../../actions/workflows/capture.yml).`,
+            });
+            await github.rest.issues.update({
+              ...context.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+            });
