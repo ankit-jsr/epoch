@@ -13,7 +13,7 @@ you for free.
 ## How it works
 
 ```
-.github/workflows/capture.yml      cron 06:00 / 14:00 / 22:00 UTC
+.github/workflows/capture.yml      cron 04:00 / 16:00 UTC (09:30 / 21:30 IST)
    └─ scripts/capture.ts (Playwright)
          ├─ reads urls.json
          ├─ writes screenshots/{slug}/{ISO-timestamp}.png
@@ -103,7 +103,7 @@ copy anything around during development.
 │   ├── capture.ts                  Playwright capture + manifest update
 │   └── lib/manifest.ts             Read/merge/write manifest
 ├── .github/workflows/
-│   ├── capture.yml                 3× daily cron + workflow_dispatch
+│   ├── capture.yml                 2× daily cron + workflow_dispatch
 │   └── deploy.yml                  Build & deploy viewer to Pages on push
 └── viewer/                         Vite + React app
     ├── src/App.tsx                 List + detail routing
@@ -116,11 +116,11 @@ copy anything around during development.
 Screenshots are saved as **JPEG quality 85** — visually indistinguishable
 from PNG for tracking purposes, ~3× smaller.
 
-At 10 URLs × 3 captures/day × 2 viewports (desktop + mobile) × ~750 KB JPEG:
+At 10 URLs × 2 captures/day × 2 viewports (desktop + mobile) × ~750 KB JPEG:
 
-- ~45 MB/day, ~1.35 GB/month, ~16 GB/year
+- ~30 MB/day, ~900 MB/month, ~11 GB/year
 - GitHub recommends repos stay under 1 GB and hard-caps at 5 GB
-- → comfortable for ~3 weeks, viable for ~3-4 months before migration
+- → comfortable for ~5 weeks, viable for ~5-6 months before migration
 
 When you cross 1 GB, migrate `screenshots/` to Cloudflare R2 (10 GB free,
 zero egress). The plan file at `~/.claude/plans/i-want-to-create-woolly-deer.md`

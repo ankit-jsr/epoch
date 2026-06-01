@@ -2,8 +2,9 @@ name: capture
 
 on:
   schedule:
-    # 06:00, 14:00, 22:00 UTC daily. Disable by commenting out while you're still wiring things up.
-    - cron: '0 6,14,22 * * *'
+    # 04:00 and 16:00 UTC daily = 09:30 IST and 21:30 IST.
+    # Bookends the India workday so we catch state changes made during the day.
+    - cron: '0 4,16 * * *'
   workflow_dispatch:
 
 permissions:
