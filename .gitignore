@@ -1,6 +1,7 @@
 node_modules/
 viewer/node_modules/
 viewer/dist/
+viewer/tsconfig.tsbuildinfo
 .env
 .env.local
 *.log
