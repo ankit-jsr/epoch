@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Route, Routes, useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { Compare } from './Compare';
+import { SingleView } from './SingleView';
 import { formatTs, manifestUrl, type Manifest, type ManifestEntry } from './types';
 
 function useManifest(): { data: Manifest | null; error: string | null } {
@@ -83,11 +84,11 @@ function Detail() {
       </header>
 
       <section className="timeline">
-        <h2 className="section-title">Pick two captures to compare</h2>
+        <h2 className="section-title">Captures</h2>
         <div className="timeline__hint muted">
-          {!a && 'Click any capture to pick the first.'}
+          {!a && 'Click a capture to view it. Click a second one to compare.'}
           {a && !b && (
-            <>Pick a second capture. <button className="link" onClick={() => setParams({})}>clear</button></>
+            <>Viewing {formatTs(a)}. Click another capture to compare. <button className="link" onClick={() => setParams({})}>clear</button></>
           )}
           {a && b && (
             <>Comparing {formatTs(a)} ↔ {formatTs(b)}. <button className="link" onClick={() => setParams({})}>clear</button></>
@@ -114,6 +115,7 @@ function Detail() {
         </ol>
       </section>
 
+      {a && !b && <SingleView slug={slug} ts={a} />}
       {a && b && <Compare slug={slug} tsA={a} tsB={b} />}
     </main>
   );
