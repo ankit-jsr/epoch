@@ -13,7 +13,7 @@ you for free.
 ## How it works
 
 ```
-.github/workflows/capture.yml      cron 04:00 / 16:00 UTC (09:30 / 21:30 IST)
+.github/workflows/capture.yml      cron 04:13 / 16:13 UTC (09:43 / 21:43 IST)
    └─ scripts/capture.ts (Playwright)
          ├─ reads urls.json
          ├─ writes screenshots/{slug}/{ISO-timestamp}.png

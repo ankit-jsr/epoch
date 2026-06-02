@@ -2,9 +2,12 @@ name: capture
 
 on:
   schedule:
-    # 04:00 and 16:00 UTC daily = 09:30 IST and 21:30 IST.
-    # Bookends the India workday so we catch state changes made during the day.
-    - cron: '0 4,16 * * *'
+    # 04:13 and 16:13 UTC daily = 09:43 IST and 21:43 IST.
+    # NOT the top of the hour on purpose — GitHub Actions free-tier schedules
+    # at xx:00 get massively delayed (4-5h is common) because every free user
+    # piles up there. xx:13 is far less crowded and historically fires within
+    # a few minutes of schedule. Bookends the India workday.
+    - cron: '13 4,16 * * *'
   workflow_dispatch:
 
 permissions:
