@@ -16,16 +16,22 @@ const SETTLE_MS = 1_000;
 const SCROLL_STEP_PX = 600;
 const SCROLL_PAUSE_MS = 400;
 const POST_SCROLL_SETTLE_MS = 1_500;
-// JPEG quality. 85 is the sweet spot for screenshot tracking: visually
-// indistinguishable from PNG, ~5-10x smaller. Diff is still meaningful because
-// pixelmatch's threshold absorbs JPEG compression noise.
-const JPEG_QUALITY = 85;
+// JPEG quality. 75 is the practical floor for screenshot tracking — mild
+// artifacts on text edges and gradients are visible if you go pixel-hunting,
+// but visually they read the same as PNG/q85 at normal viewing scale.
+// Diff still works because the bumped pixelmatch threshold (Compare.tsx:0.2)
+// absorbs the extra compression noise.
+const JPEG_QUALITY = 75;
 
 // Per-viewport browser context settings.
-// `iPhone 13` preset gives a realistic mobile UA, touch, devicePixelRatio.
+// Mobile starts from the iPhone 13 preset (realistic UA, isMobile, hasTouch,
+// 390x844 viewport) but overrides deviceScaleFactor from 3 → 2. Real iPhone
+// renders at DPR=3, but storing 3x pixel images is wasteful for a tracking
+// tool — DPR=2 still looks crisp, still triggers all responsive breakpoints,
+// and the file is roughly half the size.
 const VIEWPORT_PRESETS: Record<Viewport, Parameters<import('playwright').Browser['newContext']>[0]> = {
   desktop: { viewport: { width: 1440, height: 900 } },
-  mobile: devices['iPhone 13'],
+  mobile: { ...devices['iPhone 13'], deviceScaleFactor: 2 },
 };
 
 function timestamp(): string {

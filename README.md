@@ -113,22 +113,31 @@ copy anything around during development.
 
 ## Storage scale
 
-Screenshots are saved as **JPEG quality 85** — visually indistinguishable
-from PNG for tracking purposes, ~3× smaller.
+Screenshots are saved as **JPEG quality 75** with mobile rendered at
+**devicePixelRatio=2** (instead of the iPhone-native DPR=3). Together
+these settings keep the repo within GitHub's free-tier sweet spot
+without visible quality loss at normal viewing scale.
 
-At 10 URLs × 2 captures/day × 2 viewports (desktop + mobile) × ~750 KB JPEG:
+Real-world measurement at 11 Kapiva product URLs (mix of homepage +
+product detail pages, image-heavy):
 
-- ~30 MB/day, ~900 MB/month, ~11 GB/year
+- Per capture cycle (22 files = 11 URLs × 2 viewports): **~19 MB**
+- At 2×/day: **~38 MB/day, ~1.13 GB/month, ~14 GB/year**
 - GitHub recommends repos stay under 1 GB and hard-caps at 5 GB
-- → comfortable for ~5 weeks, viable for ~5-6 months before migration
+- → over 1 GB rec at ~month 1, 5 GB hard limit at ~month 4-5
 
-When you cross 1 GB, migrate `screenshots/` to Cloudflare R2 (10 GB free,
-zero egress). The plan file at `~/.claude/plans/i-want-to-create-woolly-deer.md`
-documents the migration steps. Schema doesn't change; only the bytes move.
+When you cross 1 GB (or sooner if it feels slow), migrate `screenshots/`
+to Cloudflare R2 (10 GB free, zero egress). The plan file at
+`~/.claude/plans/i-want-to-create-woolly-deer.md` documents the steps.
+Schema doesn't change; only the bytes move.
 
-If you need to delay migration: drop JPEG quality to 75 (`JPEG_QUALITY` in
-`scripts/capture.ts`) for ~40% smaller files, or capture mobile at
-devicePixelRatio=2 instead of 3.
+Further dials if you need more runway before migrating:
+- `JPEG_QUALITY` in `scripts/capture.ts`: 75 → 65 saves another ~25%
+  (visible artifacts on text, still fine for spotting layout changes)
+- Mobile `deviceScaleFactor`: 2 → 1 saves another ~50% on mobile bytes
+  (much less crisp but still phone-shaped)
+- Restrict per-URL `viewports` to just `["desktop"]` for URLs where
+  mobile-specific tracking doesn't add value
 
 ## Troubleshooting
 

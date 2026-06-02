@@ -76,10 +76,12 @@ export function Compare({ slug, viewport, tsA, tsB }: Props) {
       if (!ctx) throw new Error('canvas 2d context unavailable');
       const out = ctx.createImageData(w, h);
       const mismatched = pixelmatch(imgA.data, imgB.data, out.data, w, h, {
-        // 0.15 instead of 0.1 to absorb JPEG compression noise — without this,
-        // two captures of an unchanged page show a faint static of red pixels
-        // from quantization artifacts. 0.15 still catches real visual changes.
-        threshold: 0.15,
+        // 0.2 — bumped from 0.15 after dropping JPEG quality to 75 (which has
+        // more quantization noise than 85). Without this, unchanged pages
+        // show faint static. 0.2 still catches real visual changes; if a
+        // change is too subtle to read at 0.2, you probably wouldn't notice
+        // it visually anyway.
+        threshold: 0.2,
         includeAA: false,
         alpha: 0,
         diffColor: [255, 0, 0],
