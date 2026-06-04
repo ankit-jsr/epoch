@@ -48,6 +48,14 @@ jobs:
           if [ -d screenshots ]; then cp -r screenshots/. viewer/dist/screenshots/; fi
           if [ -f manifest.json ]; then cp manifest.json viewer/dist/manifest.json; fi
 
+      - name: SPA fallback (copy index.html to 404.html)
+        # GitHub Pages serves 404.html for any path it can't find. By making it
+        # an exact copy of index.html, deep links like /u/some-slug — and F5
+        # refreshes on those URLs — boot the React app, which then reads
+        # window.location and routes to the right page client-side.
+        # Without this, refreshing any non-root URL shows GH's stock 404 page.
+        run: cp viewer/dist/index.html viewer/dist/404.html
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
