@@ -92,8 +92,11 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .compare__img-wrap { position: relative; }
 .compare__img { display: block; width: 100%; height: auto; }
 .compare__diff {
-  position: absolute; inset: 0; width: 100%; height: 100%;
+  position: absolute;
   pointer-events: none; mix-blend-mode: normal; opacity: 0.65;
+  /* Sizing/positioning set inline — diff PNG dimensions don't always match
+     image B exactly (different heights when pages drift), so it's anchored
+     top-left and sized to the diffed-region/image-B ratio. */
 }
 
 .single-pane {
