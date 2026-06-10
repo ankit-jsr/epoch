@@ -12,33 +12,49 @@ type DiffState =
       mismatched: number;
       total: number;
       dataUrl: string;
-      // Dimensions of the diffed region. May be smaller than either image
-      // when they differ — we crop both to min(w, h) so the diff still
-      // produces useful output instead of refusing entirely.
+      // Dimensions of the diffed region in image-B's coordinate space.
       w: number;
       h: number;
       origA: { w: number; h: number };
       origB: { w: number; h: number };
+      // True when one image was resized to match the other (cross-DPR diff).
+      // Surfaces a hint in the UI that some "changed" pixels are rendering
+      // artifacts, not real content changes.
+      resized: boolean;
     }
-  | { kind: 'wildly_different'; aw: number; ah: number; bw: number; bh: number }
   | { kind: 'error'; message: string };
 
-/** Load PNG/JPEG into an ImageData clipped to (w, h) at top-left.
- *  When w/h are smaller than the image, the bottom/right is dropped. */
-async function loadImageData(src: string, w?: number, h?: number): Promise<ImageData> {
+/**
+ * Load an image, optionally rendering it into a canvas of size (targetW, targetH).
+ * When the target size differs from natural size, the image is scaled by canvas
+ * with high-quality smoothing. When omitted, returns the image at native size
+ * cropped to (cropW, cropH) at top-left.
+ */
+async function loadImageData(
+  src: string,
+  opts: { targetW?: number; targetH?: number; cropW?: number; cropH?: number } = {},
+): Promise<ImageData> {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.src = src;
   await img.decode();
-  const cropW = w ?? img.naturalWidth;
-  const cropH = h ?? img.naturalHeight;
+  const w = opts.targetW ?? opts.cropW ?? img.naturalWidth;
+  const h = opts.targetH ?? opts.cropH ?? img.naturalHeight;
   const c = document.createElement('canvas');
-  c.width = cropW;
-  c.height = cropH;
+  c.width = w;
+  c.height = h;
   const ctx = c.getContext('2d');
   if (!ctx) throw new Error('canvas 2d context unavailable');
-  ctx.drawImage(img, 0, 0);
-  return ctx.getImageData(0, 0, cropW, cropH);
+  if (opts.targetW !== undefined || opts.targetH !== undefined) {
+    // Resize-mode: draw the whole image scaled to the target canvas.
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, w, h);
+  } else {
+    // Crop-mode: draw at native scale, canvas size clips bottom/right.
+    ctx.drawImage(img, 0, 0);
+  }
+  return ctx.getImageData(0, 0, w, h);
 }
 
 /** Get the natural dimensions of an image at a URL. */
@@ -88,35 +104,37 @@ export function Compare({ slug, viewport, tsA, tsB }: Props) {
       // First check dimensions without decoding to ImageData (saves memory).
       const [origA, origB] = await Promise.all([imgDimensions(aUrl), imgDimensions(bUrl)]);
 
-      // If widths differ by more than a tiny rounding amount, the captures
-      // came from incompatible viewport settings (e.g. the DPR=3→2 cutover
-      // on June 2). A meaningful pixel diff isn't possible.
+      // Normalize to a common width so pixelmatch can compare pixel-for-pixel.
+      // Strategy: scale the larger image DOWN to match the smaller (never upscale
+      // — that would amplify JPEG artifacts and yield false positives everywhere).
+      // Heights scale proportionally to preserve aspect ratio.
+      const targetW = Math.min(origA.w, origB.w);
       const widthDelta = Math.abs(origA.w - origB.w);
-      if (widthDelta > 8) {
-        setDiff({
-          kind: 'wildly_different',
-          aw: origA.w, ah: origA.h, bw: origB.w, bh: origB.h,
-        });
-        return;
-      }
+      const resized = widthDelta > 8;
 
-      // Crop both to common dimensions. Widths agree (within tolerance),
-      // heights often differ because mobile pages stack content vertically
-      // and lazy-loaded sections vary. Diff only the overlapping top region.
-      const w = Math.min(origA.w, origB.w);
-      const h = Math.min(origA.h, origB.h);
+      const aScaledH = origA.w === targetW ? origA.h : Math.round(origA.h * (targetW / origA.w));
+      const bScaledH = origB.w === targetW ? origB.h : Math.round(origB.h * (targetW / origB.w));
+      // Final diff height: shorter of the two scaled images. The taller one's
+      // bottom region isn't diffed (it's content the other capture doesn't have).
+      const h = Math.min(aScaledH, bScaledH);
 
+      // Load each side at the target dimensions. If width already matches,
+      // we crop to h instead of resizing (preserves the original pixel data).
       const [imgA, imgB] = await Promise.all([
-        loadImageData(aUrl, w, h),
-        loadImageData(bUrl, w, h),
+        origA.w === targetW
+          ? loadImageData(aUrl, { cropW: targetW, cropH: h })
+          : loadImageData(aUrl, { targetW, targetH: h }),
+        origB.w === targetW
+          ? loadImageData(bUrl, { cropW: targetW, cropH: h })
+          : loadImageData(bUrl, { targetW, targetH: h }),
       ]);
 
       const diffCanvas = document.createElement('canvas');
-      diffCanvas.width = w; diffCanvas.height = h;
+      diffCanvas.width = targetW; diffCanvas.height = h;
       const ctx = diffCanvas.getContext('2d');
       if (!ctx) throw new Error('canvas 2d context unavailable');
-      const out = ctx.createImageData(w, h);
-      const mismatched = pixelmatch(imgA.data, imgB.data, out.data, w, h, {
+      const out = ctx.createImageData(targetW, h);
+      const mismatched = pixelmatch(imgA.data, imgB.data, out.data, targetW, h, {
         // 0.2 — bumped from 0.15 after dropping JPEG quality to 75 (which has
         // more quantization noise than 85). Without this, unchanged pages
         // show faint static. 0.2 still catches real visual changes; if a
@@ -131,10 +149,13 @@ export function Compare({ slug, viewport, tsA, tsB }: Props) {
       setDiff({
         kind: 'ready',
         mismatched,
-        total: w * h,
+        total: targetW * h,
         dataUrl: diffCanvas.toDataURL('image/png'),
-        w, h,
-        origA, origB,
+        w: targetW,
+        h,
+        origA,
+        origB,
+        resized,
       });
     } catch (e) {
       setDiff({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
@@ -167,16 +188,12 @@ export function Compare({ slug, viewport, tsA, tsB }: Props) {
             <span className="muted">
               {diff.mismatched.toLocaleString()} / {diff.total.toLocaleString()} px changed
               ({((diff.mismatched / diff.total) * 100).toFixed(2)}%)
-              {diff.origA.h !== diff.origB.h && (
+              {diff.resized && (
+                <> · resized to {diff.w}px wide for comparison (A was {diff.origA.w}, B was {diff.origB.w}) — expect baseline noise from different render resolutions</>
+              )}
+              {!diff.resized && diff.origA.h !== diff.origB.h && (
                 <> · diffed top {diff.h.toLocaleString()} px (A is {diff.origA.h.toLocaleString()}, B is {diff.origB.h.toLocaleString()})</>
               )}
-            </span>
-          )}
-          {diff.kind === 'wildly_different' && (
-            <span className="muted error">
-              widths differ ({diff.aw}×{diff.ah} vs {diff.bw}×{diff.bh}) — captures use incompatible
-              viewport settings (likely pre/post the June 2 mobile DPR change). Pick two captures
-              from the same era to diff.
             </span>
           )}
           {diff.kind === 'error' && <span className="muted error">{diff.message}</span>}
@@ -198,14 +215,15 @@ export function Compare({ slug, viewport, tsA, tsB }: Props) {
                 src={diff.dataUrl}
                 alt="diff"
                 className="compare__diff"
-                // Match the diff image's natural pixel dimensions to the
-                // image B layout: same width, height proportional to the
-                // diffed-vs-B ratio. Anchored top-left so the diff covers
-                // the overlapping region and the un-diffed bottom (if B is
-                // taller) stays visible underneath.
+                // Diff is in (targetW × h) coordinates. Image B is displayed
+                // at 100% pane width but represents (origB.w × origB.h) of
+                // content. Map the diff to image B's space:
+                //   - width: 100% (we resized B's width range to targetW
+                //     conceptually; visually img B fills the pane)
+                //   - height: ratio of diff height to B's scaled height
                 style={{
                   width: '100%',
-                  height: `${(diff.h / diff.origB.h) * 100}%`,
+                  height: `${(diff.h / (diff.resized ? (diff.origB.h * diff.w / diff.origB.w) : diff.origB.h)) * 100}%`,
                   top: 0,
                   left: 0,
                   bottom: 'auto',
