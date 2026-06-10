@@ -9,6 +9,7 @@ import {
   formatTs,
   hasViewport,
   manifestUrl,
+  tsDateUtc,
   VIEWPORTS,
   withinRange,
   type Capture,
@@ -17,6 +18,41 @@ import {
   type TimeRange,
   type Viewport,
 } from './types';
+
+/** Group captures by their UTC date prefix, preserving the input order (newest first). */
+function groupByDate(captures: Capture[]): Array<{ date: string; items: Capture[] }> {
+  const groups: Array<{ date: string; items: Capture[] }> = [];
+  let current: { date: string; items: Capture[] } | null = null;
+  for (const c of captures) {
+    const d = tsDateUtc(c.ts);
+    if (!current || current.date !== d) {
+      current = { date: d, items: [] };
+      groups.push(current);
+    }
+    current.items.push(c);
+  }
+  return groups;
+}
+
+/** "Today" / "Yesterday" / "Jun 4" — relative-friendly day label for UTC date. */
+function dayLabel(ymd: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  if (ymd === today) return 'Today';
+  const t = new Date(today + 'T00:00:00Z');
+  const d = new Date(ymd + 'T00:00:00Z');
+  const daysAgo = Math.round((t.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+  if (daysAgo === 1) return 'Yesterday';
+  if (daysAgo > 1 && daysAgo < 7) return `${daysAgo}d ago`;
+  // Older: "Jun 4"
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+/** "18:21" from a "2026-06-09T18-21" timestamp. */
+function timeOnly(ts: string): string {
+  const t = ts.split('T')[1];
+  return t ? t.replace('-', ':') : ts;
+}
 
 function useManifest(): { data: Manifest | null; error: string | null } {
   const [data, setData] = useState<Manifest | null>(null);
@@ -133,36 +169,41 @@ function Detail() {
     setParams(np);
   }
 
+  const groupedCaptures = useMemo(() => groupByDate(filteredCaptures), [filteredCaptures]);
+  const aCap = a ? entry.captures.find((c) => c.ts === a) : null;
+  const bCap = b ? entry.captures.find((c) => c.ts === b) : null;
+  const showSingle = !!aCap && !bCap && hasViewport(aCap, viewport);
+  const showCompare = !!aCap && !!bCap && hasViewport(aCap, viewport) && hasViewport(bCap, viewport);
+
   return (
-    <main className="container">
-      <header className="page-header">
-        <Link to="/" className="back">← all URLs</Link>
-        <h1>{entry.slug}</h1>
-        <a href={entry.url} target="_blank" rel="noreferrer" className="muted">{entry.url}</a>
+    <main className="container detail">
+      <header className="detail__header">
+        <div className="detail__title">
+          <Link to="/" className="back">← all URLs</Link>
+          <h1>{entry.slug}</h1>
+          <a href={entry.url} target="_blank" rel="noreferrer" className="muted detail__url">{entry.url}</a>
+        </div>
+        {vps.length > 1 && (
+          <div className="viewport-toggle">
+            {VIEWPORTS.map((vp) => {
+              const disabled = !vps.includes(vp);
+              return (
+                <button
+                  key={vp}
+                  className={`viewport-btn ${viewport === vp ? 'is-active' : ''}`}
+                  disabled={disabled}
+                  onClick={() => selectViewport(vp)}
+                  title={disabled ? `No ${vp} captures yet` : ''}
+                >
+                  {vp === 'desktop' ? '🖥' : '📱'} {vp}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </header>
 
-      {vps.length > 1 && (
-        <div className="viewport-toggle">
-          {VIEWPORTS.map((vp) => {
-            const disabled = !vps.includes(vp);
-            return (
-              <button
-                key={vp}
-                className={`viewport-btn ${viewport === vp ? 'is-active' : ''}`}
-                disabled={disabled}
-                onClick={() => selectViewport(vp)}
-                title={disabled ? `No ${vp} captures yet` : ''}
-              >
-                {vp === 'desktop' ? '🖥 Desktop' : '📱 Mobile'}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      <section className="timeline">
-        <h2 className="section-title">Captures</h2>
-
+      <div className="detail__sticky">
         <TimelineControls
           range={range}
           onRange={setRange}
@@ -172,47 +213,63 @@ function Detail() {
           bTs={b}
           onPickTs={pickTs}
         />
+      </div>
 
-        <div className="timeline__hint muted">
-          {!a && 'Click a capture below to view it. Click a second one to compare. Or use the date pickers above.'}
-          {a && !b && (
-            <>Viewing {formatTs(a)}. Click another capture to compare. <button className="link" onClick={clear}>clear</button></>
-          )}
-          {a && b && (
-            <>Comparing {formatTs(a)} ↔ {formatTs(b)}. <button className="link" onClick={clear}>clear</button></>
-          )}
-        </div>
-        <ol className="capture-list">
-          {filteredCaptures.length === 0 && (
-            <li className="muted">No captures in this range. Try "All" or a wider window.</li>
-          )}
-          {filteredCaptures.map((c) => {
-            const selected = c.ts === a || c.ts === b;
-            const ok = hasViewport(c, viewport);
-            const result = c.viewports[viewport];
-            return (
-              <li key={c.ts} className={`capture-row ${selected ? 'is-selected' : ''} ${ok ? '' : 'is-failed'}`}>
-                <button
-                  className="capture-btn"
-                  disabled={!ok}
-                  onClick={() => ok && pick(c.ts)}
-                  title={!ok && result && result.ok === false ? result.error : (!ok ? `Not captured at ${viewport}` : '')}
-                >
-                  <span className="capture-btn__ts">{formatTs(c.ts)}</span>
-                  {!ok && <span className="capture-btn__error">no {viewport}</span>}
-                </button>
-              </li>
-            );
-          })}
-        </ol>
+      {/* View pane goes RIGHT under the controls — image is the primary content. */}
+      {showSingle && <SingleView slug={slug} viewport={viewport} ts={a!} />}
+      {showCompare && <Compare slug={slug} viewport={viewport} tsA={a!} tsB={b!} />}
+      {!showSingle && !showCompare && (
+        <section className="detail__empty muted">
+          Pick a date above (or a capture below) to view a screenshot. Pick two to compare.
+        </section>
+      )}
+
+      {/* Capture history — secondary, below the image. Grouped by day so 20+ captures stay scannable. */}
+      <section className="history">
+        <header className="history__header">
+          <h2 className="section-title">History</h2>
+          <span className="muted history__count">
+            {filteredCaptures.length} of {entry.captures.length} captures
+            {range !== 'all' && ` · ${range}`}
+          </span>
+          {(a || b) && <button className="link history__clear" onClick={clear}>clear selection</button>}
+        </header>
+        {filteredCaptures.length === 0 ? (
+          <p className="muted history__empty">No captures in this range. Try "All" or a wider window.</p>
+        ) : (
+          <div className="history__groups">
+            {groupedCaptures.map((g) => (
+              <div className="history__group" key={g.date}>
+                <div className="history__group-label">
+                  <span className="history__group-name">{dayLabel(g.date)}</span>
+                  <span className="muted history__group-date">{g.date}</span>
+                  <span className="muted history__group-count">· {g.items.length}</span>
+                </div>
+                <ol className="capture-list">
+                  {g.items.map((c) => {
+                    const selected = c.ts === a || c.ts === b;
+                    const ok = hasViewport(c, viewport);
+                    const result = c.viewports[viewport];
+                    return (
+                      <li key={c.ts} className={`capture-row ${selected ? 'is-selected' : ''} ${ok ? '' : 'is-failed'}`}>
+                        <button
+                          className="capture-btn"
+                          disabled={!ok}
+                          onClick={() => ok && pick(c.ts)}
+                          title={!ok && result && result.ok === false ? result.error : (!ok ? `Not captured at ${viewport}` : '')}
+                        >
+                          <span className="capture-btn__ts">{timeOnly(c.ts)}</span>
+                          {!ok && <span className="capture-btn__error">no {viewport}</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
-
-      {a && !b && hasViewport(entry.captures.find((c) => c.ts === a)!, viewport) && (
-        <SingleView slug={slug} viewport={viewport} ts={a} />
-      )}
-      {a && b && hasViewport(entry.captures.find((c) => c.ts === a)!, viewport) && hasViewport(entry.captures.find((c) => c.ts === b)!, viewport) && (
-        <Compare slug={slug} viewport={viewport} tsA={a} tsB={b} />
-      )}
     </main>
   );
 }
