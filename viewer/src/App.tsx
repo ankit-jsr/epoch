@@ -124,6 +124,7 @@ function Detail() {
     if (!entry) return [];
     return entry.captures.filter((c) => withinRange(c.ts, range));
   }, [entry, range]);
+  const groupedCaptures = useMemo(() => groupByDate(filteredCaptures), [filteredCaptures]);
 
   if (error) return <Status>Could not load manifest: {error}</Status>;
   if (!data) return <Status>Loading…</Status>;
@@ -169,7 +170,6 @@ function Detail() {
     setParams(np);
   }
 
-  const groupedCaptures = useMemo(() => groupByDate(filteredCaptures), [filteredCaptures]);
   const aCap = a ? entry.captures.find((c) => c.ts === a) : null;
   const bCap = b ? entry.captures.find((c) => c.ts === b) : null;
   const showSingle = !!aCap && !bCap && hasViewport(aCap, viewport);
