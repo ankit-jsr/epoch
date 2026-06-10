@@ -102,12 +102,15 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 
 .single-pane {
   margin-top: 12px;
-  max-height: 80vh; overflow: auto;
+  /* No max-height — let the screenshot lay out at its natural height and
+     scroll the whole page. Sticky controls keep the date picker visible. */
   border: 1px solid var(--border); border-radius: 8px; background: var(--card);
+  overflow: hidden;  /* clip rounded corners on the image */
 }
 .single-pane .compare__img { width: 100%; height: auto; display: block; }
-/* Mobile screenshots are 390px wide @3x DPR → 1170px image bytes. Display at a
-   readable phone-ish width so they don't get scaled up like a desktop capture. */
+/* Mobile screenshots: width-cap at a phone-ish 420px so the image isn't
+   stretched to desktop width. Height is unconstrained — image flows the
+   full length of the page. */
 .single-pane--mobile { max-width: 420px; margin-left: auto; margin-right: auto; }
 .compare__grid--mobile {
   grid-template-columns: minmax(0, 420px) minmax(0, 420px);
@@ -200,15 +203,8 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 }
 .timeline-controls__hint { font-size: 11px; padding-left: 110px; }
 
-.range-capsules { display: inline-flex; gap: 4px; }
-.range-capsule {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 999px;
-  padding: 4px 12px; font-size: 12px; color: var(--fg); cursor: pointer;
-}
-.range-capsule:hover { border-color: var(--accent); }
-.range-capsule.is-active { background: var(--accent); color: white; border-color: var(--accent); }
-
 .dt-pickers { display: inline-flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.timeline-controls__clear { align-self: center; font-size: 12px; margin-left: 4px; }
 .dt-pickers__arrow { font-size: 16px; color: var(--muted); align-self: center; margin-top: 18px; }
 .timeline-controls__row--top { align-items: flex-start; }
 
@@ -257,34 +253,3 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
   margin-bottom: 24px;
 }
 
-/* History (capture list) section */
-.history { margin-top: 24px; }
-.history__header {
-  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-.history__header .section-title { margin: 0; }
-.history__count { font-size: 11px; }
-.history__clear { margin-left: auto; font-size: 12px; }
-.history__empty { padding: 24px 0; }
-
-.history__groups { display: flex; flex-direction: column; gap: 10px; }
-.history__group {
-  display: grid;
-  grid-template-columns: 130px 1fr;
-  gap: 12px;
-  align-items: start;
-}
-.history__group-label {
-  display: flex; flex-direction: column; gap: 1px;
-  padding: 4px 0;
-  font-size: 12px;
-}
-.history__group-name { font-weight: 600; }
-.history__group-date { font-size: 10px; }
-.history__group-count { font-size: 10px; }
-
-@media (max-width: 640px) {
-  .history__group { grid-template-columns: 1fr; }
-  .history__group-label { flex-direction: row; gap: 6px; align-items: baseline; }
-}
