@@ -23,6 +23,22 @@ function timeOnly(ts: string): string {
   return t ? t.replace('-', ':') : ts;
 }
 
+/** YYYY-MM-DD for (today UTC) minus N days. */
+function utcMinusDays(daysAgo: number): string {
+  const ms = Date.now() - daysAgo * 86_400_000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+type QuickPill = { label: string; daysAgo: number };
+const QUICK_PILLS: QuickPill[] = [
+  { label: 'Today', daysAgo: 0 },
+  { label: 'Yesterday', daysAgo: 1 },
+  { label: 'Day before', daysAgo: 2 },
+  { label: '7 days ago', daysAgo: 7 },
+  { label: '1 month ago', daysAgo: 30 },
+  { label: '6 months ago', daysAgo: 180 },
+];
+
 function DateAndTimePicker({
   slot,
   label,
@@ -108,8 +124,55 @@ export function TimelineControls({
   const minDate = validDates.length ? validDates[validDates.length - 1] : undefined;
   const maxDate = validDates.length ? validDates[0] : undefined;
 
+  // For each quick pill, find a capture on that exact UTC date with the current
+  // viewport. If none exists, the pill is shown but disabled.
+  const pillTargets = QUICK_PILLS.map((p) => {
+    const date = utcMinusDays(p.daysAgo);
+    const cap = findCaptureOnDate(captures, date, viewport);
+    return { ...p, date, cap };
+  });
+
+  function handlePillClick(ts: string) {
+    // First click goes to From if empty; second click (From already set) goes
+    // to To, entering compare mode. Third click restarts at From.
+    if (!aTs) {
+      onPickTs('a', ts);
+    } else if (!bTs && ts !== aTs) {
+      onPickTs('b', ts);
+    } else {
+      onPickTs('a', ts);
+      onPickTs('b', null);
+    }
+  }
+
+  // Which pill (if any) maps to the current From / To capture?
+  const activePillForA = pillTargets.find((p) => p.cap?.ts === aTs)?.label;
+  const activePillForB = pillTargets.find((p) => p.cap?.ts === bTs)?.label;
+
   return (
     <div className="timeline-controls">
+      <div className="timeline-controls__row">
+        <span className="timeline-controls__label">Quick jump</span>
+        <div className="pill-row">
+          {pillTargets.map((p) => {
+            const enabled = !!p.cap;
+            const active = enabled && (p.cap!.ts === aTs || p.cap!.ts === bTs);
+            return (
+              <button
+                key={p.label}
+                type="button"
+                className={`pill ${active ? 'is-active' : ''}`}
+                disabled={!enabled}
+                onClick={() => enabled && handlePillClick(p.cap!.ts)}
+                title={enabled ? `${p.date} — latest capture` : `no capture on ${p.date}`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="timeline-controls__row">
         <span className="timeline-controls__label">Compare two dates</span>
         <div className="dt-pickers">
@@ -143,10 +206,18 @@ export function TimelineControls({
       </div>
 
       <div className="timeline-controls__hint muted">
-        {!aTs && !bTs && 'Pick a date to view that capture. Pick two to compare them.'}
-        {aTs && !bTs && <>Viewing {formatTs(aTs)}. Pick "To" to compare against another date/time.</>}
-        {!aTs && bTs && <>Viewing {formatTs(bTs)}. Pick "From" to compare against another date/time.</>}
-        {aTs && bTs && <>Comparing {formatTs(aTs)} ↔ {formatTs(bTs)} (you can change the time on each side).</>}
+        {!aTs && !bTs && 'Click a pill or pick a date to view that capture. Click two to compare.'}
+        {aTs && !bTs && (
+          <>Viewing {formatTs(aTs)}{activePillForA && ` (${activePillForA})`}. Click another pill or pick "To" to compare.</>
+        )}
+        {!aTs && bTs && (
+          <>Viewing {formatTs(bTs)}{activePillForB && ` (${activePillForB})`}. Click another pill or pick "From" to compare.</>
+        )}
+        {aTs && bTs && (
+          <>
+            Comparing {formatTs(aTs)}{activePillForA && ` (${activePillForA})`} ↔ {formatTs(bTs)}{activePillForB && ` (${activePillForB})`}.
+          </>
+        )}
       </div>
     </div>
   );
