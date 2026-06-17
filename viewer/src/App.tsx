@@ -9,6 +9,7 @@ import {
   formatTs,
   hasViewport,
   manifestUrl,
+  stepCapture,
   VIEWPORTS,
   type Manifest,
   type ManifestEntry,
@@ -80,13 +81,46 @@ function Detail() {
 
   // Hooks must run unconditionally.
   const entry: ManifestEntry | undefined = data?.urls.find((u) => u.slug === slug);
+  const vps = entry ? availableViewports(entry) : [];
+  const viewport: Viewport = vps.includes(v) ? v : (vps[0] ?? 'desktop');
+
+  // Keyboard nav: ←/→ step the "active" pane.
+  // Single-view: steps `a`. Compare: ←/→ steps b (the "moving" side);
+  // Shift+←/→ steps a.
+  useEffect(() => {
+    if (!entry) return;
+    function onKey(e: KeyboardEvent) {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) {
+        return;
+      }
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+
+      // Recompute neighbors inside the handler so we always work off the
+      // current entry+viewport without coupling the effect to step* state.
+      const hasA = !!a;
+      const hasB = !!b;
+      // If only a is set OR Shift held → step a. Otherwise → step b.
+      const slotToStep: 'a' | 'b' = (!hasB || e.shiftKey) ? 'a' : 'b';
+      const ts = slotToStep === 'a' ? a : b;
+      if (!ts) return;
+
+      const direction: 'newer' | 'older' = e.key === 'ArrowLeft' ? 'older' : 'newer';
+      const neighbor = stepCapture(entry!.captures, ts, direction, viewport);
+      if (!neighbor) return;
+      e.preventDefault();
+      // setParams via the same path as pickTs.
+      const np = new URLSearchParams(params);
+      np.set(slotToStep, neighbor.ts);
+      setParams(np);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [entry, viewport, a, b, params, setParams]);
 
   if (error) return <Status>Could not load manifest: {error}</Status>;
   if (!data) return <Status>Loading…</Status>;
   if (!entry) return <Status>Unknown URL slug "{slug}".</Status>;
-
-  const vps = availableViewports(entry);
-  const viewport: Viewport = vps.includes(v) ? v : (vps[0] ?? 'desktop');
 
   function selectViewport(next: Viewport) {
     const np = new URLSearchParams(params);
@@ -114,6 +148,19 @@ function Detail() {
   const bCap = b ? entry.captures.find((c) => c.ts === b) : null;
   const showSingle = !!aCap && !bCap && hasViewport(aCap, viewport);
   const showCompare = !!aCap && !!bCap && hasViewport(aCap, viewport) && hasViewport(bCap, viewport);
+
+  // Step helpers — return null if neighbor doesn't exist (button gets disabled).
+  function stepperFor(ts: string | null, slot: 'a' | 'b'): { prev?: () => void; next?: () => void } {
+    if (!ts) return {};
+    const older = stepCapture(entry!.captures, ts, 'older', viewport);
+    const newer = stepCapture(entry!.captures, ts, 'newer', viewport);
+    return {
+      prev: older ? () => pickTs(slot, older.ts) : undefined,
+      next: newer ? () => pickTs(slot, newer.ts) : undefined,
+    };
+  }
+  const stepA = stepperFor(a, 'a');
+  const stepB = stepperFor(b, 'b');
 
   return (
     <main className="container detail">
@@ -156,8 +203,25 @@ function Detail() {
 
       {/* Image is the primary content. View pane sits right under controls
           and takes whatever vertical space the screenshot needs. */}
-      {showSingle && <SingleView slug={slug} viewport={viewport} ts={a!} />}
-      {showCompare && <Compare slug={slug} viewport={viewport} tsA={a!} tsB={b!} />}
+      {showSingle && (
+        <SingleView
+          slug={slug}
+          viewport={viewport}
+          ts={a!}
+          onPrev={stepA.prev}
+          onNext={stepA.next}
+        />
+      )}
+      {showCompare && (
+        <Compare
+          slug={slug}
+          viewport={viewport}
+          tsA={a!}
+          tsB={b!}
+          onStepA={stepA}
+          onStepB={stepB}
+        />
+      )}
       {!showSingle && !showCompare && (
         <section className="detail__empty muted">
           Pick a date above to view a screenshot. Pick two to compare them.

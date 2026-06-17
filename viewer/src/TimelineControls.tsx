@@ -208,14 +208,14 @@ export function TimelineControls({
       <div className="timeline-controls__hint muted">
         {!aTs && !bTs && 'Click a pill or pick a date to view that capture. Click two to compare.'}
         {aTs && !bTs && (
-          <>Viewing {formatTs(aTs)}{activePillForA && ` (${activePillForA})`}. Click another pill or pick "To" to compare.</>
+          <>Viewing {formatTs(aTs)}{activePillForA && ` (${activePillForA})`}. Click another pill or pick "To" to compare. <kbd>←</kbd>/<kbd>→</kbd> steps through history.</>
         )}
         {!aTs && bTs && (
           <>Viewing {formatTs(bTs)}{activePillForB && ` (${activePillForB})`}. Click another pill or pick "From" to compare.</>
         )}
         {aTs && bTs && (
           <>
-            Comparing {formatTs(aTs)}{activePillForA && ` (${activePillForA})`} ↔ {formatTs(bTs)}{activePillForB && ` (${activePillForB})`}.
+            Comparing {formatTs(aTs)}{activePillForA && ` (${activePillForA})`} ↔ {formatTs(bTs)}{activePillForB && ` (${activePillForB})`}. <kbd>←</kbd>/<kbd>→</kbd> steps To; <kbd>Shift</kbd>+arrows step From.
           </>
         )}
       </div>

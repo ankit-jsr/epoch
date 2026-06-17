@@ -222,6 +222,25 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
   /* Disabled pills indicate "no data on that date" — looks ghosted */
   background: transparent;
 }
+
+.step-group { display: inline-flex; align-items: center; gap: 8px; }
+.step-group--inline { gap: 6px; flex-wrap: wrap; }
+.step-btn {
+  background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+  padding: 2px 10px; font-size: 14px; color: var(--fg);
+  cursor: pointer; font-family: inherit; line-height: 1.4;
+  user-select: none;
+}
+.step-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.step-btn--sm { padding: 1px 7px; font-size: 12px; }
+
+kbd {
+  display: inline-block; min-width: 1.2em; text-align: center;
+  padding: 0 4px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px; line-height: 1.4; vertical-align: baseline;
+}
 .dt-pickers__arrow { font-size: 16px; color: var(--muted); align-self: center; margin-top: 18px; }
 .timeline-controls__row--top { align-items: flex-start; }
 

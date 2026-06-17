@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import pixelmatch from 'pixelmatch';
 import { formatTs, imageUrl, type Viewport } from './types';
 
-type Props = { slug: string; viewport: Viewport; tsA: string; tsB: string };
+type Props = {
+  slug: string;
+  viewport: Viewport;
+  tsA: string;
+  tsB: string;
+  onStepA?: { prev?: () => void; next?: () => void };
+  onStepB?: { prev?: () => void; next?: () => void };
+};
 
 type DiffState =
   | { kind: 'idle' }
@@ -66,7 +73,7 @@ async function imgDimensions(src: string): Promise<{ w: number; h: number }> {
   return { w: img.naturalWidth, h: img.naturalHeight };
 }
 
-export function Compare({ slug, viewport, tsA, tsB }: Props) {
+export function Compare({ slug, viewport, tsA, tsB, onStepA, onStepB }: Props) {
   const base = import.meta.env.BASE_URL ?? '/';
   const aUrl = imageUrl(base, slug, viewport, tsA);
   const bUrl = imageUrl(base, slug, viewport, tsB);
@@ -201,13 +208,61 @@ export function Compare({ slug, viewport, tsA, tsB }: Props) {
       </header>
       <div className={`compare__grid compare__grid--${viewport}`}>
         <div className="compare__pane" ref={aRef}>
-          <div className="compare__label">{formatTs(tsA)}</div>
+          <div className="compare__label">
+            <div className="step-group step-group--inline">
+              <button
+                type="button"
+                className="step-btn step-btn--sm"
+                disabled={!onStepA?.prev}
+                onClick={onStepA?.prev}
+                title="Older A (Shift+←)"
+                aria-label="Older A"
+              >
+                ←
+              </button>
+              <span>From · {formatTs(tsA)}</span>
+              <button
+                type="button"
+                className="step-btn step-btn--sm"
+                disabled={!onStepA?.next}
+                onClick={onStepA?.next}
+                title="Newer A (Shift+→)"
+                aria-label="Newer A"
+              >
+                →
+              </button>
+            </div>
+          </div>
           <div className="compare__img-wrap">
             <img src={aUrl} alt={`${slug} at ${tsA}`} className="compare__img" />
           </div>
         </div>
         <div className="compare__pane" ref={bRef}>
-          <div className="compare__label">{formatTs(tsB)}</div>
+          <div className="compare__label">
+            <div className="step-group step-group--inline">
+              <button
+                type="button"
+                className="step-btn step-btn--sm"
+                disabled={!onStepB?.prev}
+                onClick={onStepB?.prev}
+                title="Older B (←)"
+                aria-label="Older B"
+              >
+                ←
+              </button>
+              <span>To · {formatTs(tsB)}</span>
+              <button
+                type="button"
+                className="step-btn step-btn--sm"
+                disabled={!onStepB?.next}
+                onClick={onStepB?.next}
+                title="Newer B (→)"
+                aria-label="Newer B"
+              >
+                →
+              </button>
+            </div>
+          </div>
           <div className="compare__img-wrap">
             <img src={bUrl} alt={`${slug} at ${tsB}`} className="compare__img" />
             {showDiff && diff.kind === 'ready' && (

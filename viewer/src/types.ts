@@ -106,3 +106,29 @@ export function findCaptureOnDate(
   }
   return null;
 }
+
+/**
+ * Step from `currentTs` to the next/previous capture that has `viewport`.
+ * Direction: -1 = newer (toward array start, "next" in user-facing terms since
+ * captures are sorted newest-first), +1 = older. Returns null if no neighbor
+ * with the viewport exists in the requested direction.
+ *
+ * The "next" naming in callers points to "newer in time" since that matches
+ * scrubbing direction expectations on a left-to-right timeline.
+ */
+export function stepCapture(
+  captures: Capture[],
+  currentTs: string,
+  direction: 'newer' | 'older',
+  viewport: Viewport,
+): Capture | null {
+  const i = captures.findIndex((c) => c.ts === currentTs);
+  if (i === -1) return null;
+  const delta = direction === 'newer' ? -1 : +1;
+  let j = i + delta;
+  while (j >= 0 && j < captures.length) {
+    if (hasViewport(captures[j], viewport)) return captures[j];
+    j += delta;
+  }
+  return null;
+}
