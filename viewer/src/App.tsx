@@ -144,6 +144,17 @@ function Detail() {
     setParams(np);
   }
 
+  // Atomic update of both slots in a single setParams call. Required for
+  // any path that needs to change `a` AND `b` at the same time — calling
+  // pickTs twice in a row clobbers itself because both calls read the
+  // same stale URLSearchParams (React hasn't re-rendered yet).
+  function pickBoth(aTs: string | null, bTs: string | null) {
+    const np = new URLSearchParams(params);
+    if (aTs === null) np.delete('a'); else np.set('a', aTs);
+    if (bTs === null) np.delete('b'); else np.set('b', bTs);
+    setParams(np);
+  }
+
   const aCap = a ? entry.captures.find((c) => c.ts === a) : null;
   const bCap = b ? entry.captures.find((c) => c.ts === b) : null;
   const showSingle = !!aCap && !bCap && hasViewport(aCap, viewport);
@@ -197,6 +208,7 @@ function Detail() {
           aTs={a}
           bTs={b}
           onPickTs={pickTs}
+          onPickBoth={pickBoth}
           onClear={(a || b) ? clear : undefined}
         />
       </div>

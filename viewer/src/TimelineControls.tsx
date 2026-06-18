@@ -13,6 +13,9 @@ type Props = {
   aTs: string | null;
   bTs: string | null;
   onPickTs: (slot: 'a' | 'b', ts: string | null) => void;
+  // Atomic two-slot update for transitions like "restart selection". Calling
+  // onPickTs twice in a row hits a stale-params clobber bug.
+  onPickBoth: (aTs: string | null, bTs: string | null) => void;
   // Shown only when at least one of a/b is set.
   onClear?: () => void;
 };
@@ -116,6 +119,7 @@ export function TimelineControls({
   aTs,
   bTs,
   onPickTs,
+  onPickBoth,
   onClear,
 }: Props) {
   const validDates = captures
@@ -133,16 +137,26 @@ export function TimelineControls({
   });
 
   function handlePillClick(ts: string) {
-    // First click goes to From if empty; second click (From already set) goes
-    // to To, entering compare mode. Third click restarts at From.
-    if (!aTs) {
+    // Empty selection → set From.
+    if (!aTs && !bTs) {
       onPickTs('a', ts);
-    } else if (!bTs && ts !== aTs) {
-      onPickTs('b', ts);
-    } else {
-      onPickTs('a', ts);
-      onPickTs('b', null);
+      return;
     }
+    // Only From set → set To if different; no-op if same pill clicked again.
+    if (aTs && !bTs) {
+      if (ts !== aTs) onPickTs('b', ts);
+      return;
+    }
+    // Only To set (unusual; can happen via URL manipulation) → fill From.
+    if (!aTs && bTs) {
+      if (ts !== bTs) onPickTs('a', ts);
+      return;
+    }
+    // Both set:
+    //   - clicking either currently-selected pill: no-op (avoid surprise)
+    //   - clicking a third pill: restart with that as From, clear To
+    if (ts === aTs || ts === bTs) return;
+    onPickBoth(ts, null);
   }
 
   // Which pill (if any) maps to the current From / To capture?
