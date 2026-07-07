@@ -12,10 +12,36 @@ import {
 } from './lib/manifest.ts';
 
 const NAV_TIMEOUT_MS = 45_000;
+const NAV_FALLBACK_TIMEOUT_MS = 30_000;
 const SETTLE_MS = 1_000;
 const SCROLL_STEP_PX = 600;
 const SCROLL_PAUSE_MS = 400;
 const POST_SCROLL_SETTLE_MS = 1_500;
+
+/**
+ * Navigate with a fallback: if waitUntil='networkidle' times out (page has a
+ * heartbeat/analytics/chat-widget that never stops), retry with waitUntil='load'.
+ * Load-state is weaker (fires when the load event completes, ignoring subsequent
+ * async requests) but gets us a usable page instead of a hard failure.
+ *
+ * Fallback only fires when the initial strategy was networkidle. If a URL
+ * explicitly configures waitFor=load or waitFor=domcontentloaded in urls.json,
+ * that's the user's deliberate choice — don't degrade further.
+ */
+async function gotoWithFallback(
+  page: import('playwright').Page,
+  url: string,
+  waitFor: NonNullable<UrlEntry['waitFor']>,
+): Promise<void> {
+  try {
+    await page.goto(url, { waitUntil: waitFor, timeout: NAV_TIMEOUT_MS });
+  } catch (e) {
+    const isTimeout = e instanceof Error && /Timeout \d+ms exceeded/.test(e.message);
+    if (!isTimeout || waitFor !== 'networkidle') throw e;
+    console.log(`  retry with waitUntil=load after networkidle timeout: ${url}`);
+    await page.goto(url, { waitUntil: 'load', timeout: NAV_FALLBACK_TIMEOUT_MS });
+  }
+}
 // JPEG quality. 75 is the practical floor for screenshot tracking — mild
 // artifacts on text edges and gradients are visible if you go pixel-hunting,
 // but visually they read the same as PNG/q85 at normal viewing scale.
@@ -85,7 +111,7 @@ async function captureAtViewport(
   const page = await ctx.newPage();
   const start = Date.now();
   try {
-    await page.goto(url, { waitUntil: waitFor, timeout: NAV_TIMEOUT_MS });
+    await gotoWithFallback(page, url, waitFor);
     try {
       await page.evaluate(() => (document as Document).fonts?.ready);
     } catch {
