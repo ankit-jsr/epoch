@@ -1,10 +1,23 @@
 {
-  "generated_at": "2026-07-18T17:20:08.560Z",
+  "generated_at": "2026-07-19T06:48:32.512Z",
   "urls": [
     {
       "slug": "kapiva-home",
       "url": "https://kapiva.in",
       "captures": [
+        {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 719978
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 890732
+            }
+          }
+        },
         {
           "ts": "2026-07-18T17-14",
           "viewports": {
@@ -1325,6 +1338,19 @@
       "url": "https://kapivaher.com",
       "captures": [
         {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 31025
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 680157
+            }
+          }
+        },
+        {
           "ts": "2026-07-18T17-14",
           "viewports": {
             "desktop": {
@@ -2604,6 +2630,19 @@
       "slug": "kapiva-in-kapiva-dia-free-juice-1-l",
       "url": "https://kapiva.in/kapiva-dia-free-juice-1-l/",
       "captures": [
+        {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 937564
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 1393492
+            }
+          }
+        },
         {
           "ts": "2026-07-18T17-14",
           "viewports": {
@@ -3911,6 +3950,19 @@
       "url": "https://kapiva.in/mens-health/him-foods-shilajit-gold-20g/",
       "captures": [
         {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 884968
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 1026050
+            }
+          }
+        },
+        {
           "ts": "2026-07-18T17-14",
           "viewports": {
             "desktop": {
@@ -5151,6 +5203,19 @@
       "slug": "himalayan-shilajit-resin-20g",
       "url": "https://kapiva.in/mens-health/kapiva-himalayan-shilajit-resin-20g/",
       "captures": [
+        {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 864450
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 1131542
+            }
+          }
+        },
         {
           "ts": "2026-07-18T17-14",
           "viewports": {
@@ -6393,6 +6458,19 @@
       "url": "https://kapiva.in/comorbidity/energySupplement/kapiva-shilajit-energy-resin",
       "captures": [
         {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 734855
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 809813
+            }
+          }
+        },
+        {
           "ts": "2026-07-18T17-14",
           "viewports": {
             "desktop": {
@@ -7633,6 +7711,19 @@
       "slug": "bp-care-juice",
       "url": "https://kapiva.in/bp-care-juice-with-10-potent-herbs/",
       "captures": [
+        {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 799397
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 1034135
+            }
+          }
+        },
         {
           "ts": "2026-07-18T17-14",
           "viewports": {
@@ -8875,6 +8966,19 @@
       "url": "https://kapiva.in/bp-care-cholesterol/cholest-fit-juice/",
       "captures": [
         {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 814736
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 960277
+            }
+          }
+        },
+        {
           "ts": "2026-07-18T17-14",
           "viewports": {
             "desktop": {
@@ -10115,6 +10219,19 @@
       "slug": "liver-care-juice",
       "url": "https://kapiva.in/solution/detox/liver-care-juice/",
       "captures": [
+        {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 742521
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 934333
+            }
+          }
+        },
         {
           "ts": "2026-07-18T17-14",
           "viewports": {
@@ -11357,6 +11474,19 @@
       "url": "https://kapiva.in/women-s-health/shatavari-balance-juice/",
       "captures": [
         {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 992290
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 1315923
+            }
+          }
+        },
+        {
           "ts": "2026-07-18T17-14",
           "viewports": {
             "desktop": {
@@ -12597,6 +12727,19 @@
       "slug": "artho-sure-juice",
       "url": "https://kapiva.in/weight-pain-mangement/artho-sure-juice/",
       "captures": [
+        {
+          "ts": "2026-07-19T06-43",
+          "viewports": {
+            "desktop": {
+              "ok": true,
+              "bytes": 869232
+            },
+            "mobile": {
+              "ok": true,
+              "bytes": 1173183
+            }
+          }
+        },
         {
           "ts": "2026-07-18T17-14",
           "viewports": {
